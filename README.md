@@ -1,18 +1,12 @@
 # Photon-Weather-Station
 Wifi-enabled weather display using panel meters
 
-See YouTube video linked below for more information about this project. The code compiles using the Particle Photon development board.
+Gauges: http://www.allelectronics.com/make-a-store/item/pm-376/panel-meter-full-scale-1ma-dc/1.html
 
+Trimpots: http://www.allelectronics.com/make-a-store/item/tps-5k/5k-single-turn-trimpot/1.html
 
-<a href="https://www.youtube.com/watch?v=m_QQrMqQb04" target="_blank"><img src="http://img.youtube.com/vi/m_QQrMqQb04/0.jpg" 
-alt="Photon Weather Display" width="480" height="360" border="10" /></a>
-
-Wiring diagram:
-
-<img src="https://cloud.githubusercontent.com/assets/11914694/11531489/cb7dd742-98c2-11e5-8517-1fbe557323ad.PNG" alt="Wiring Diagram">
-
-
-Copyright (c) 2015 Grady Hillhouse
+![Alt text](/images/DSC08575.JPG?raw=true "Finished Product")
+![Alt text](/images/pinout.jpg?raw=true "Pinout")
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
