@@ -1,6 +1,8 @@
 # Photon-Weather-Station
 Wifi-enabled weather display using panel meters
 
+Queries darksky.net's (previously called forecast.io) API for current weather conditions
+
 ### Parts
 Particle Photon: https://www.adafruit.com/product/2721  
 Gauges: http://www.allelectronics.com/make-a-store/item/pm-376/panel-meter-full-scale-1ma-dc/1.html  
