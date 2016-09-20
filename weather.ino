@@ -6,7 +6,7 @@
 #define pAlert1         D4
 #define pAlert2         D5
 
-//Refresh time in seconds. Min is about 87 seconds (1000 API calls per day are allowed by forecast.io).
+//Refresh time in seconds. Min is about 87 seconds (1000 API calls per day are allowed by darksky.net).
 int refresh;
 //Unix time of last refresh
 double lastRefresh      = 0;
