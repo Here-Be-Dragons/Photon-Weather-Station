@@ -1,6 +1,6 @@
 {
 	"event": "weather",
-	"url": "https://api.forecast.io/forecast/#################",
+	"url": "https://api.darksky.net/forecast/#################",
 	"requestType": "GET",
 	"headers": {
 		"Content-Type": "application/json"
