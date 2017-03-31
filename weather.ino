@@ -1,3 +1,6 @@
+PRODUCT_ID(690);
+PRODUCT_VERSION(1);
+
 #define pTemperature    WKP
 #define pHumidity       D3
 #define pPressure       D2
@@ -6,7 +9,7 @@
 #define pAlert1         D4
 #define pAlert2         D5
 
-//Refresh time in seconds. Min is about 87 seconds (1000 API calls per day are allowed by forecast.io).
+//Refresh time in seconds. Min is about 87 seconds (1000 API calls per day are allowed by darksky.net).
 int refresh;
 //Unix time of last refresh
 double lastRefresh      = 0;
@@ -36,7 +39,7 @@ void setup() {
     //Particle.variable("GotWeather", lastGotWeather);
 
     //Listen for replies to the particle.publish() called below, and put the replied data through gotWeatherData()
-    Particle.subscribe("hook-response/weather_" + System.deviceID(), gotWeatherData, MY_DEVICES);
+    Particle.subscribe(System.deviceID() + "/hook-response/weather/", gotWeatherData, MY_DEVICES);
 
     //Set up the output pins for Gauges and LEDs
     pinMode(pTemperature,   OUTPUT);
@@ -73,7 +76,7 @@ void setup() {
     analogWrite(pWindSpeed,     0);
     
     //Get initial values, then set the refresh to now
-    Particle.publish("weather_" + System.deviceID(), PRIVATE);
+    Particle.publish("weather", PRIVATE);
     lastRefresh = Time.now();
     currentTime = Time.now();
     Particle.publish("Photon_bootup");
@@ -128,7 +131,7 @@ void loop() {
         System.reset();
     }
     if ((Time.now() - lastRefresh) > refresh) {
-        Particle.publish("weather_" + System.deviceID(), PRIVATE);
+        Particle.publish("weather", PRIVATE);
         lastRefresh = Time.now();
     }
     delay(1000);

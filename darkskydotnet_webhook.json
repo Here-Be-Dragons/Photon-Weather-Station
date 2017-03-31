@@ -1,12 +1,15 @@
 {
 	"event": "weather",
-	"url": "https://api.forecast.io/forecast/#################",
+	"url": "https://api.darksky.net/forecast/#################",
 	"requestType": "GET",
 	"headers": {
 		"Content-Type": "application/json"
 		},
+	"responseTopic": "{{PARTICLE_DEVICE_ID}}/hook-response/{{PARTICLE_EVENT_NAME}}",
 	"responseTemplate": "{{#currently}}{{temperature}}~{{humidity}}~{{pressure}}~{{windSpeed}}~{{/currently}}{{#hourly}}{{#data.0}}{{precipIntensity}}~{{precipProbability}}~{{/data.0}}{{#data.1}}{{precipIntensity}}~{{precipProbability}}~{{/data.1}}{{#data.2}}{{precipIntensity}}~{{precipProbability}}~{{/data.2}}{{#data.3}}{{precipIntensity}}~{{precipProbability}}~{{/data.3}}{{#data.4}}{{precipIntensity}}~{{precipProbability}}~{{/data.4}}{{/hourly}}{{#alerts.0}}{{expires}}~{{/alerts.0}}",
 	"query": "exclude=minutely,daily,flags",
+	"noDefaults": true,
+	"rejectUnauthorized": true,
 	"mydevices": true,
 	"deviceid": "############################"
 }
