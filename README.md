@@ -9,9 +9,9 @@ Gauges: http://www.allelectronics.com/make-a-store/item/pm-376/panel-meter-full-
 Trimpots: http://www.allelectronics.com/make-a-store/item/tps-5k/5k-single-turn-trimpot/1.html  
 
 ### Sketches
-**weather.ino:** The actual weather station Photon sketch  
-**weather-screen.ino:** Something I wrote to toy around with a 128x64 OLED screen I bought.  Subscribes to the same webhook as the primary weather station, and outputs total expected precipitation in the next 5 hours to the oled screen.  Will require some modification to weather.ino to work.  
-**gauge-tester.ino:** Cycles gauges between 0% and 100% for calibration purposes.  
+`weather.ino`: The actual weather station Photon sketch  
+`weather-screen.ino`: Something I wrote to toy around with a 128x64 OLED screen I bought.  Subscribes to the same webhook as the primary weather station, and outputs total expected precipitation in the next 5 hours to the oled screen.  Will require some modification to weather.ino to work.  
+`gauge-tester.ino`: Cycles gauges between 0% and 100% for calibration purposes.  
 
 ### Images
 ![Alt text](/images/DSC08575.JPG?raw=true "Finished Product")
