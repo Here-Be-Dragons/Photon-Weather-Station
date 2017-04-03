@@ -15,7 +15,7 @@ Trimpots: http://www.allelectronics.com/make-a-store/item/tps-5k/5k-single-turn-
 
 ### Images
 ![Alt text](/images/DSC08575.JPG?raw=true "Finished Product")
-![Alt text](/images/pinout.jpg?raw=true "Pinout")
+![Alt text](/images/schematic.png?raw=true "Pinout")
 
 ### Copyright
 Permission is hereby granted, free of charge, to any person obtaining a copy
