@@ -1,7 +1,7 @@
 #include "Particle.h"
 
 PRODUCT_ID(690);
-PRODUCT_VERSION(7);
+PRODUCT_VERSION(9);
 
 #define pTemperature    WKP
 #define pHumidity       D3
@@ -19,9 +19,15 @@ unsigned char packetBuffer[1024];
 // --- Timers ---
 int refresh;
 double lastRefresh = 0;            // Webhook publish timer
+double lastGotWeather = 0;       // Webhook received timer
 double lastTempestData = 0;        // UDP stale data tracker
+bool staleTempest = true;
+bool staleCloud = true;
 unsigned long lastBlinkTime = 0;   // Non-blocking LED blinker
 bool alertLedState = false;
+bool lightningAlertActive = false;
+unsigned long lastLightningTime = 0;
+const unsigned long LIGHTNING_TIMEOUT = 15 * 60 * 1000; // 15 minutes
 
 // --- Weather Variables ---
 // Tempest (Current Conditions)
@@ -34,7 +40,7 @@ float windSpeed;
 float precipProbability;
 float precipLogic[5] = {0,0,0,0,0};
 float precipInLogic[5] = {0,0,0,0,0};
-float ifAlert;
+float ifAlert = 0.0;
 
 // Dial Outputs
 int mTemperature;
@@ -89,9 +95,7 @@ void setup() {
     //Get initial values, then set the refresh to now
     Particle.publish("weather", PRIVATE);
     lastRefresh = Time.now();
-    lastTempestData = Time.now(); // Assume fresh on boot
     Particle.publish("Photon_bootup");
-    delay(10000);
 }
 
 void loop() {
@@ -130,7 +134,7 @@ void loop() {
         
         String type = "";
         
-        // First pass: Find the event "type"
+        // Find the event "type"
         JSONObjectIterator iterType(root);
         while(iterType.next()) {
             if (iterType.name() == "type") {
@@ -139,7 +143,7 @@ void loop() {
             }
         }
 
-        // Second pass: Parse full observation (60 seconds)
+        // Parse full observation (published every 60 seconds)
         if (type == "obs_st") {
             JSONObjectIterator iterObs(root);
             while(iterObs.next()) {
@@ -164,7 +168,7 @@ void loop() {
             }
         }
 
-        // Third pass: Parse rapid wind (3 seconds)
+        // Parse rapid wind (published every 60 seconds)
         if (type == "rapid_wind") {
             JSONObjectIterator iterWind(root);
             while(iterWind.next()) {
@@ -183,21 +187,69 @@ void loop() {
                 }
             }
         }
+        // Parse lightning strikes (published ad-hoc, we will filter for strikes within 6 miles to trigger an alert)
+        if (type == "evt_strike") {
+            JSONObjectIterator iterStrike(root);
+            while(iterStrike.next()) {
+                if (iterStrike.name() == "evt") {
+                    JSONArrayIterator evtArray(iterStrike.value());
+                    int index = 0;
+                    while(evtArray.next()) {
+                        if (index == 1) { // Distance
+                            float distanceKM = evtArray.value().toDouble();
+                            float distanceMiles = distanceKM * 0.621371;
+                            
+                            if (distanceMiles <= 6.0) {
+                                lightningAlertActive = true;
+                                lastLightningTime = Time.now();
+                            }
+                        }
+                        index++;
+                    }
+                }
+            }
+        }
     }
 
     // Alert & Stale Data LED Logic
-    if ((Time.now() - lastTempestData) > 300) {
-        // Tempest Data is Stale (> 5 mins): BLINK LEDs
-        if (millis() - lastBlinkTime > 500) { 
-            alertLedState = !alertLedState;
-            digitalWrite(pAlert1, alertLedState ? HIGH : LOW);
-            digitalWrite(pAlert2, alertLedState ? HIGH : LOW);
-            lastBlinkTime = millis();
-        }
-    } else if (ifAlert > 0.0 && ifAlert > Time.now()) {
-        // Data is fresh, and there is an active DarkSky Alert: SOLID LEDs
+    // Local UDP Stale
+    if (lastTempestData != 0 && (Time.now() - lastTempestData) > 300) {
+        staleTempest = true;
+    } else {
+        staleTempest = false;
+    }
+    // Cloud Data Stale
+    if ((Time.now() - lastGotWeather) > 300) {
+        staleCloud = true;
+    } else {
+        staleCloud = false;
+    }
+    
+    if (lightningAlertActive && (Time.now() - lastLightningTime) < LIGHTNING_TIMEOUT) {
+        // Data is fresh, and there is an active lightning alert: SOLID LEDs
         digitalWrite(pAlert1, HIGH);
         digitalWrite(pAlert2, HIGH);
+    } else if (ifAlert > 0.0 && ifAlert > Time.now()) {
+        // Data is fresh, and there is an active Weather Alert: SOLID LEDs
+        digitalWrite(pAlert1, HIGH);
+        digitalWrite(pAlert2, HIGH);
+    } else if (staleTempest || staleCloud) {
+        if (millis() - lastBlinkTime > 500) { 
+            alertLedState = !alertLedState;
+            // Tempest Data is Stale (> 5 mins): Blink Left LED
+            if (staleTempest) {
+                digitalWrite(pAlert1, alertLedState ? HIGH : LOW);
+            } else {
+                digitalWrite(pAlert1, LOW);
+            }
+            // Cloud Data is Stale (> 5 mins): Blink Right LED
+            if (staleCloud) {
+                digitalWrite(pAlert2, alertLedState ? HIGH : LOW);
+            } else {
+                digitalWrite(pAlert2, LOW);
+            }
+            lastBlinkTime = millis();
+        }
     } else {
         // All clear
         digitalWrite(pAlert1, LOW);
@@ -205,18 +257,19 @@ void loop() {
     }
 }
 
-// --- Parse the DarkSky Webhook ---
+// --- Parse the Webhook ---
 void gotWeatherData(const char *name, const char *data) {
+    lastGotWeather = Time.now();
     String str = String(data);
     char strBuffer[400] = "";
     str.toCharArray(strBuffer, 400);
     
-    // We must parse the DarkSky current conditions to advance the strtok pointer, 
-    // but we use dummy variables so we don't overwrite the Tempest data.
-    float dummyTemp  = atof(strtok(strBuffer, "~"));
-    float dummyHum   = atof(strtok(NULL, "~"));
-    float dummyPress = atof(strtok(NULL, "~"));
-    float dummyWind  = atof(strtok(NULL, "~"));
+    // We must parse the current conditions to advance the strtok pointer, 
+    // but we use side variables so we don't overwrite the Tempest data if it exists.
+    float cloudTemp  = atof(strtok(strBuffer, "~"));
+    float cloudHum   = atof(strtok(NULL, "~"));
+    float cloudPress = atof(strtok(NULL, "~"));
+    float cloudWind  = atof(strtok(NULL, "~"));
     
     // Now extract the precipitation forecast we actually want
     precipInLogic[0]    = atof(strtok(NULL, "~"));
@@ -238,22 +291,31 @@ void gotWeatherData(const char *name, const char *data) {
             precipProbability = precipLogic[i];
         }
     }
-    
+    if (Time.now() - lastTempestData > 300) {
+        // Failover: Copy cloud data into the main variables
+        temperature = cloudTemp;
+        humidity = cloudHum;
+        pressure = cloudPress;
+        windSpeed = cloudWind;
+    }
     updateDials();
 }
 
 // --- Unified Dial Output ---
+// This will try to dynamically catch humidity and temperature values on a scale of 0-1 (PirateWeather) and 0-100 (Tempest)
 void updateDials() {
     mTemperature = (int) constrain((255.0) * (temperature - 0.0) / (100.0 - 0.0), 0, 255);
     
-    // Note: Tempest Humidity is 0-100%, DarkSky was 0.0-1.0. 
-    mHumidity = (int) constrain((255.0) * (humidity - 0.0) / (100.0 - 0.0), 0, 255); 
-    
+    // Note: Tempest Humidity is 0-100%, PirateWeather is 0.0-1.0. 
+    float normalizedHum = (humidity > 1.0) ? (humidity / 100.0) : humidity;
+    mHumidity = (int) constrain((255.0) * normalizedHum, 0, 255);
+
     mPressure = (int) constrain((255.0) * (pressure - 960.0) / (1060.0 - 960.0), 0, 255);
     mWindSpeed = (int) constrain((255.0) * (windSpeed - 0.0) / (30.0 - 0.0), 0, 255);
     
-    // Darksky Precip is still 0.0 to 1.0
-    mPrecipProb = (int) constrain((255.0) * (precipProbability - 0.0) / (1.0 - 0.0), 0, 255); 
+    // Same as Humidity - Tempest gives 0-100%, PirateWeather gives 0.0-1.0
+    float normalizedPrecip = (precipProbability > 1.0) ? (precipProbability / 100.0) : precipProbability;
+    mPrecipProb = (int) constrain((255.0) * normalizedPrecip, 0, 255);
 
     analogWrite(pTemperature, mTemperature);
     analogWrite(pHumidity, mHumidity);
