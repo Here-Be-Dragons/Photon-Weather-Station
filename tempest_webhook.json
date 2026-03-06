@@ -1,0 +1,19 @@
+{
+    "name": "get_tempest_weather fog",
+    "event": "weather",
+    "deviceID": "<your_particle_device_id_here>",
+    "responseTopic": "{{PARTICLE_DEVICE_ID}}/hook-response/{{PARTICLE_EVENT_NAME}}",
+    "disabled": false,
+    "template": "webhook",
+    "url": "https://swd.weatherflow.com/swd/rest/better_forecast",
+    "requestType": "GET",
+    "noDefaults": false,
+    "rejectUnauthorized": true,
+    "responseTemplate": "{{current_conditions.air_temperature}}~{{current_conditions.relative_humidity}}~{{current_conditions.station_pressure}}~{{current_conditions.wind_avg}}~0~{{forecast.hourly.0.precip_probability}}~0~{{forecast.hourly.1.precip_probability}}~0~{{forecast.hourly.2.precip_probability}}~0~{{forecast.hourly.3.precip_probability}}~0~{{forecast.hourly.4.precip_probability}}~0",
+    "unchunked": false,
+    "data_url_response_event": false,
+    "query": {
+        "token": "<your_token_here>",
+        "station_id": "<your_station_id_here>"
+    }
+}
