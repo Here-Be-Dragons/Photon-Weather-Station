@@ -1,7 +1,7 @@
 # Photon-Weather-Station
 Wifi-enabled weather display using panel meters
 
-Queries darksky.net's (previously called forecast.io) API for current weather conditions
+Queries PirateWeather API (https://github.com/Pirate-Weather/pirateweather) for current weather conditions
 
 ### Parts
 Particle Photon: https://www.adafruit.com/product/2721  
